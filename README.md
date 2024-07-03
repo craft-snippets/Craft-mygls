@@ -6,6 +6,12 @@ This is NOT integration for GLS shipping, but MyGls, which is a separate service
 
 This plugin requires Craft CMS 5.0.0 or later, and PHP 8.2 or later.
 
+## Installation
+
+```
+composer require craftsnippets/craft-mygls
+```
+
 ## Permissions
 
 In order to be able to use Plugin, control panel users must have "Manage Gls parcels" permission enabled.
