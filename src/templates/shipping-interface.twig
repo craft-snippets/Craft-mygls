@@ -1,0 +1,470 @@
+{% import '_includes/forms.twig' as forms %}
+{% set shipping = order.getGls() %}
+
+<div class="shipping__container" data-{{ pluginHandle }}-interface>
+    <div data-interface>
+        <div class="shipping__header">
+            {{ 'MyGls shipping' | t('craft-mygls') }}
+        </div>
+
+        {% if errors %}
+        <div class="shipping__disabled-info-wrapper">
+            <div class="shipping__disabled-info">
+                <span class="notification-icon shipping__disabled-info-icon" data-icon="alert" aria-label="error" role="img"></span>
+                <span class="shipping__disabled-info__header">ERRORS</span>
+            </div>
+            <ul class="shipping__disabled-info__list">
+                {% for error in errors %}
+                    <li class="shipping__disabled-info__single">
+                        {{ error }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="shipping__box-wrapper" data-interface-inside>
+            <div class="shipping__image">
+                {% include 'craft-mygls/icon.svg' %}
+            </div>
+            <div class="shipping__box">
+
+                {# parcels exist #}
+                {% if shipping.getHasParcels() %}
+                    <div class="shipping__ready">
+
+                        <strong>{{ 'Parcels'|t('craft-mygls') }}</strong>:
+                        {# list of parcels #}
+                        <ul class="shipping__parcels">
+                            {% for parcel in shipping.parcels %}
+                                <li>
+                                    {% if parcel.getTrackingUrl() %}
+                                        <a href="{{ parcel.getTrackingUrl() }}" target="_blank">{{ parcel.getTitle() }}</a>
+                                    {% else %}
+                                        {{ parcel.getTitle() }}
+                                    {% endif %}
+                                    {% if parcel.getStatusText() %} - {{ 'status'|t('craft-mygls') }}: <strong>{{ parcel.getStatusText() }}</strong>{% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+
+                        {% if shipping.isCod() %}
+                            <hr>
+                            {{ 'Cash on delivery amount:'|t('craft-mygls') }} <strong>{{ shipping.getCodAmountNumber() }}</strong> {{ shipping.getCodAmountCurrency() }}
+                        {% endif %}
+
+                        <hr>
+
+                        {# buttons #}
+                        <a target="_blank" href="{{ pdfUrl }}" class="btn" data-label-trigger>
+                            {{ 'Get parcel labels'|t('craft-mygls') }}
+                        </a>
+                        <button
+                                class="btn"
+                                data-toggle-details
+                                data-details-text-show="{{ 'Show details'|t('craft-mygls') }}"
+                                data-details-text-hide="{{ 'Hide details'|t('craft-mygls') }}"
+                        >
+                            {{ 'Show details'|t('craft-mygls') }}
+                        </button>
+                        <button class="btn" data-update-status>
+                            {{ 'Update parcels status'|t('craft-mygls') }}
+                        </button>
+                        <button class="btn" data-remove {{ not shipping.canRemoveParcels ? 'data-cannot-remove' }}>
+                            {{ 'Remove parcels'|t('craft-mygls') }}
+                        </button>
+                        <br>
+
+                        <div data-details hidden>
+                            <br>
+                            <ul>
+                                {% for property in shipping.getShippingDetails() %}
+                                    <li>
+                                        {{ property.label }}:
+                                        <strong>{{ property.value }}</strong>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <hr>
+                        <div>
+                            {{ 'Remember that editing order settings after parcels were already created, will not influence parcels settings.'|t('craft-mygls') }}
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+                {# add parcels #}
+                {% if not shipping.getHasParcels() %}
+                    <div class="" data-send hidden>
+
+{#                        {{ 'Creating parcels of the type:'|t('craft-mygls') }} <strong>{{ shipping.getDefaultParcelTyPeLabel() }}</strong>#}
+{#                        <hr>#}
+
+                        {% if shipping.canUseCod() %}
+                            {{ 'Cash on delivery is enabled for this shipping method. Amount that will be used:'|t('craft-mygls') }} <strong>{{ shipping.getCodBeforeRequest() }} {{ shipping.getCodCurrencyBeforeRequest() }}</strong>
+                            <hr>
+                        {% endif %}
+
+                        <div data-settings>
+                            {# dont add name attribute to avoid sending it with dfault order edit request #}
+                            {{ forms.textField({
+                                label: 'Number of parcels'|t('craft-mygls'),
+                                value: 1,
+                                id: 'parcelCount',
+                                type: 'number',
+                                min: 1,
+                            }) }}
+
+
+                            {{ forms.selectField({
+                                label: 'Sender address'|t('craft-mygls'),
+                                instructions: 'Select the location which address will be used as the sender address for the parcels.'|t('craft-mygls'),
+                                id: 'senderLocationId',
+                                options: locationOptions,
+                                value: defaultLocationId,
+                            }) }}
+
+                            {{ forms.textField({
+                                label: 'Parcel info printed on label'|t('craft-mygls'),
+                                instructions: 'Optional'|t('craft-mygls'),
+                                id: 'parcelDescription',
+                            }) }}
+
+                            {{ forms.dateField({
+                                label: 'Pickup date'|t('craft-mygls'),
+                                instructions: 'Default: current day'|t('craft-mygls'),
+                                id: 'pickupDate',
+                            }) }}
+
+                        </div>
+
+                        <div class="field">
+                            <button class="btn" data-cancel>
+                                {{ 'Cancel'|t('craft-mygls') }}
+                            </button>
+                            <button class="btn submit" data-submit>
+                                {{ 'Submit'|t('craft-mygls') }}
+                            </button>
+                        </div>
+
+                    </div>
+
+                    {# initial #}
+                    <div class="shipping__initial" data-initial>
+
+                        <button class="btn submit" data-show>
+                            {{ 'Create parcels'|t('craft-mygls') }}
+                        </button>
+
+                    </div>
+
+                {% endif %}
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    {% js %}
+    let container = $('[data-{{ pluginHandle }}-interface]');
+    // switch text on hide/show details button
+    container.find('[data-toggle-details]').on('click', function(e){
+        e.preventDefault();
+        container.find('[data-details]').slideToggle();
+        if($(this).text().trim() == $(this).data('details-text-show')){
+            $(this).text($(this).data('details-text-hide'));
+        }else{
+            $(this).text($(this).data('details-text-show'));
+        }
+    });
+
+    // show create parcel form
+    container.find('[data-show]').on('click', function(e){
+        e.preventDefault();
+        container.find('[data-initial]').hide();
+        container.find('[data-send]').show();
+    });
+
+    // hide create parcel form
+    container.find('[data-cancel]').on('click', function(e){
+        e.preventDefault();
+        container.find('[data-initial]').show();
+        container.find('[data-send]').hide();
+    });
+
+    // update status
+    container.find('[data-update-status]').on('click', function(e){
+        e.preventDefault();
+
+        let sendController = '{{actionUrl('craft-mygls/api/update-parcels-status')}}';
+        let formData = new FormData();
+
+        formData.append('orderId', {{ order.id }});
+        formData.append('{{craft.app.config.general.csrfTokenName}}', '{{ craft.app.request.csrfToken }}');
+
+        const button = $(this);
+        $.ajax({
+            cache: false,
+            contentType: false,
+            processData: false,
+            method: "POST",
+            url: sendController,
+            data: formData,
+            dataType: "json",
+            beforeSend: function( ) {
+                button.addClass('btn-is-loading');
+            },
+        }).always(function() {
+
+        }).done(function( data ) {
+            if(data['success'] ?? false){
+                console.log(data['success'])
+                {% if shipping.canReloadOnRequest() %}
+                location.reload();
+                {% endif %}
+            }else{
+                Craft.cp.displayError(data['error']);
+                button.removeClass('btn-is-loading');
+            }
+        }).fail(function( data ) {
+            button.removeClass('btn-is-loading');
+            Craft.cp.displayError('Controller error');
+        });
+    });
+
+
+    // remove shipping data
+
+    container.find('[data-remove]').on('click', function(e){
+        e.preventDefault();
+
+        if($(this).is('[data-cannot-remove]')){
+            Craft.cp.displayError('{{ 'Cannot remove parcels.'|t('craft-mygls')|raw  }}');
+            return;
+        }
+
+        if(!confirm('{{ 'Are you sure you want to remove the parcels from the Order?'|t('craft-mygls') }}')){
+            return;
+        }
+
+        let sendController = '{{actionUrl('craft-mygls/api/remove-parcels')}}';
+        let formData = new FormData();
+
+        formData.append('orderId', {{ order.id }});
+        formData.append('{{craft.app.config.general.csrfTokenName}}', '{{ craft.app.request.csrfToken }}');
+
+        const button = $(this);
+        $.ajax({
+            cache: false,
+            contentType: false,
+            processData: false,
+            method: "POST",
+            url: sendController,
+            data: formData,
+            dataType: "json",
+            beforeSend: function( ) {
+                button.addClass('btn-is-loading');
+                $('[data-interface]').addClass('shipping-interface-blocked');
+                {#$('[data-remove]').text('{{ 'Removing...'|t('craft-mygls') }}');#}
+            },
+        }).always(function() {
+            $('[data-interface]').removeClass('shipping-interface-blocked');
+            button.removeClass('btn-is-loading');
+            {#$('[data-remove]').text('{{ 'Remove parcels'|t('craft-mygls') }}');#}
+        }).done(function( data ) {
+            if(data['success'] ?? false){
+                {% if shipping.canReloadOnRequest() %}
+                location.reload();
+                {% endif %}
+            }else{
+                Craft.cp.displayError(data['status']);
+            }
+        }).fail(function( data ) {
+            Craft.cp.displayError('Controller error');
+        });
+    });
+
+    // create parcels
+    container.find('[data-submit]').on('click', function(e){
+        e.preventDefault();
+
+        let sendController = '{{actionUrl('craft-mygls/api/create-parcel')}}';
+        let formData = new FormData();
+
+        formData.append('orderId', {{ order.id }});
+        formData.append('{{craft.app.config.general.csrfTokenName}}', '{{ craft.app.request.csrfToken }}');
+
+        let requestSettings = {};
+
+        container.find('[data-settings] input, [data-settings] textarea, [data-settings] select').each(function(){
+            let key = $(this).attr('id');
+            requestSettings[key] = $(this).val();
+        });
+        formData.append('requestSettings', JSON.stringify(requestSettings));
+
+        const button = $(this);
+        $.ajax({
+            cache: false,
+            contentType: false,
+            processData: false,
+            method: "POST",
+            url: sendController,
+            data: formData,
+            dataType: "json",
+            beforeSend: function( ) {
+                button.addClass('btn-is-loading');
+            },
+        }).always(function() {
+            button.removeClass('btn-is-loading');
+        }).done(function( data ) {
+            if(data['success'] ?? false){
+                {% if shipping.canReloadOnRequest() %}
+                location.reload();
+                {% endif %}
+            }else{
+                Craft.cp.displayError(data['error']);
+            }
+        }).fail(function( data ) {
+            Craft.cp.displayError('Controller error');
+        });
+
+    });
+
+    $('#order-edit-btn, #orderDetailsTab .btn-link-default').on('click', function(e){
+        container.find('[data-interface-inside]').addClass('shipping-interface-blocked-inside');
+    });
+
+    container.find('[data-interface]').on('click', function(e){
+        if($('[data-interface-inside]').hasClass('shipping-interface-blocked-inside')){
+            alert('{{ 'You need to finish editing the order, before using shipping interface.'|t('craft-mygls')  }}');
+        }
+    });
+
+    {% endjs %}
+</script>
+
+<style>
+    {% css %}
+    .shipping-interface-blocked-inside{
+        pointer-events: none;
+        opacity: 0.5;
+    }
+    .shipping__container{
+        margin-top: 3rem;
+    }
+    .shipping__header{
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+    .shipping__box{
+
+    }
+
+    .shipping__box-wrapper{
+        display: flex;
+        gap: 1rem;
+        background-color: #f3f7fc;
+        /*border: 1px solid #eee;*/
+        border-radius: 5px;
+        box-shadow: 0 0 0 1px #cdd8e4,0 2px 12px rgba(205,216,228,.5);
+        padding: 1rem;
+    }
+    .shipping__image svg{
+        width: 3.5rem;
+        height: auto;
+    }
+    .shipping__box{
+        flex-grow: 1;
+    }
+    .shipping__parcels{
+        list-style: square;
+        margin-left: 1rem;
+        margin-top: 0.7rem;
+    }
+    .shipping__initial{
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+    .shipping__disabled-info-wrapper{
+        background-color: var(--gray-050);
+        border-radius: var(--large-border-radius);
+        box-shadow: 0 0 0 1px #cdd8e4,0 2px 12px rgba(205,216,228,.5);
+        box-sizing: border-box;
+        margin-bottom: var(--l);
+        padding: var(--l) var(--xl) var(--xl);
+    }
+    .shipping__disabled-info__header{
+        font-weight: bold;
+        position: relative;
+        top: 2px;
+    }
+    .shipping__disabled-info{
+        display: flex;
+        gap: 0.5rem;
+    }
+    .shipping__disabled-info__list{
+        margin-top: 1rem;
+        list-style: square;
+        margin-left: 1rem;
+    }
+    .shipping__disabled-info__single{
+        /*margin-top: 1rem*/
+    }
+
+    .shipping__disabled-info .shipping__disabled-info-icon{
+        color: var(--error-color);
+    }
+    [data-cannot-remove]{
+        opacity: 0.25;
+    }
+    .shipping-interface-blocked{
+        pointer-events: none;
+    }
+
+
+    .btn-is-loading:after {
+        position: absolute;
+        display: block;
+        height: 1rem;
+        width: 1rem;
+        margin-top: -.5rem;
+        margin-left: -.5rem;
+        border: 2px solid;
+        border-radius: 50%;
+        animation: btn-loading .5s infinite linear;
+        border-right-color: transparent;
+        border-top-color: transparent;
+        content: "";
+        left: 50%;
+        top: 50%;
+        z-index: 1;
+    }
+    .btn-is-loading.submit:after{
+        border-top-color: white;
+        border-left-color: white;
+    }
+    .btn-is-loading:not(.submit):after{
+        border-top-color: black;
+        border-left-color: black;
+    }
+    @keyframes btn-loading {
+        0% {
+            transform:rotate(0)
+        }
+        to {
+            transform:rotate(360deg)
+        }
+    }
+    .btn-is-loading, .btn-is-loading.submit {
+        position:relative;
+        pointer-events:none;
+        color:transparent !important;
+    }
+    {% endcss %}
+</style>

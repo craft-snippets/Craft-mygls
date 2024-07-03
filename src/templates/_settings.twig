@@ -1,0 +1,180 @@
+{% import '_includes/forms.twig' as forms %}
+
+{% if settings.getPluginErrors() %}
+<div class="settings-errors">
+    <div class="settings-errors__header">
+        <span class="notification-icon settings-errors__icon" data-icon="alert" aria-label="error" role="img"></span>
+        <span class="settings-errors__header-text">Configuration errors</span>
+    </div>
+    <ul class="settings-errors__list">
+        {% for error in settings.getPluginErrors() %}
+            <li>
+                {{ error }}
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% endif %}
+
+{% css %}
+.settings-errors{
+    list-style: square;
+    background-color: var(--gray-050);
+    border-radius: var(--large-border-radius);
+    box-shadow: 0 0 0 1px #cdd8e4,0 2px 12px rgba(205,216,228,.5);
+    box-sizing: border-box;
+    margin-bottom: var(--l);
+    padding: var(--l) var(--xl) var(--xl);
+}
+.settings-errors__list{
+    margin-top: 1rem;
+    list-style: square;
+    margin-left: 1rem;
+}
+.settings-errors__icon{
+    color: var(--error-color);
+}
+.settings-errors__header-text{
+    font-weight: bold;
+    position: relative;
+    top: 2px;
+}
+{% endcss %}
+
+{# test mode #}
+{{ forms.lightSwitch({
+    label: "Test mode"|t('craft-mygls'),
+    name: 'testMode',
+    on: settings.testMode,
+    errors: settings.getErrors('testMode'),
+}) }}
+
+{# api country #}
+{{ forms.selectField({
+    label: "API country"|t('craft-mygls'),
+    name: 'apiCountry',
+    options: settings.getCountryOptions(),
+    value: settings.apiCountry,
+    errors: settings.getErrors('apiCountry'),
+}) }}
+
+{# api client id #}
+{{ forms.autosuggestField({
+    label: 'API client id'|t('craft-mygls'),
+    name: 'apiCliendId',
+    value: settings.apiCliendId,
+    errors: settings.getErrors('apiCliendId'),
+    suggestEnvVars: true,
+}) }}
+
+{# api username #}
+{{ forms.autosuggestField({
+    label: 'API username'|t('craft-mygls'),
+    name: 'apiUsername',
+    value: settings.apiUsername,
+    errors: settings.getErrors('apiUsername'),
+    suggestEnvVars: true,
+}) }}
+
+{# api password #}
+{{ forms.autosuggestField({
+    label: 'API password'|t('craft-mygls'),
+    name: 'apiPassword',
+    value: settings.apiPassword,
+    errors: settings.getErrors('apiPassword'),
+    suggestEnvVars: true,
+}) }}
+
+<hr>
+
+{# shipping methods #}
+{{forms.editableTableField({
+    id: 'enabledShippingMethods',
+    name: 'enabledShippingMethods',
+    cols: settings.getShippingMethodsColumns(),
+    rows: settings.enabledShippingMethods,
+    addRowLabel: 'Add the shipping method'|t('craft-mygls'),
+    initJs: true,
+    label: 'Shipping methods with MyGls integration enabled'|t('craft-mygls'),
+    errors: settings.getErrors('enabledShippingMethods'),
+    allowAdd: true,
+    allowDelete: true,
+    allowReorder: false,
+}) }}
+
+{# COD currency #}
+{{ forms.textField({
+    label: 'Currency code for cash on delivery parcels'|t('craft-mygls'),
+    instructions: 'Optional. In ISO format, must be the upper case.'|t('craft-mygls'),
+    name: 'currencyCode',
+    value: settings.currencyCode,
+    errors: settings.getErrors('currencyCode'),
+}) }}
+
+{# phone number field #}
+{{ forms.selectField({
+    label: "Phone number field"|t('craft-mygls'),
+    instructions: "Select one of the plain text fields assigned to the address model. Value of this field will be used for the parcels generation request."|t('craft-mygls'),
+    name: 'phoneFieldId',
+    options: settings.getPhoneFieldOptions(),
+    value: settings.phoneFieldId,
+    errors: settings.getErrors('phoneFieldId'),
+}) }}
+
+{# pickup email #}
+{{ forms.selectField({
+    label: "Pickup address email field"|t('craft-mygls'),
+    instructions: "Select one of the email fields assigned to the address model. Value of this field will be used for the parcels pickup address email. It will NOT be used for delivery address - delivery address uses clients account email."|t('craft-mygls'),
+    name: 'pickupAddressEmailFieldId',
+    options: settings.getPickupAddressEmailFieldOptions(),
+    value: settings.pickupAddressEmailFieldId,
+    errors: settings.getErrors('pickupAddressEmailFieldId'),
+}) }}
+
+{# parcel volume #}
+{{ forms.selectField({
+    label: "Parcel label asset volume"|t('craft-mygls'),
+    instructions: "Select asset volume where parcel labels PDF files will be stored. For the security reasons, it SHOULD NOT allow uploading within the web root - otherwise files would be exposed to the internet."|t('craft-mygls'),
+    name: 'labelAssetVolumeId',
+    options: settings.getLabelAssetVolumeOptions(),
+    value: settings.labelAssetVolumeId,
+    errors: settings.getErrors('labelAssetVolumeId'),
+}) }}
+
+{# parcel label field #}
+{{ forms.selectField({
+    label: "Parcel label asset field"|t('craft-mygls'),
+    instructions: 'Select asset field assigned to the commerce order model. It should allow uploding to volume selected in the "Parcel label asset volume" setting.'|t('craft-mygls'),
+    name: 'labelAssetFieldId',
+    options: settings.getLabelAssetFieldOptions(),
+    value: settings.labelAssetFieldId,
+    errors: settings.getErrors('labelAssetFieldId'),
+}) }}
+
+
+{# delivered status #}
+{{ forms.selectField({
+    label: 'Order status that will be set when parcels status will be updated to "delivered" status.'|t('craft-mygls'),
+    name: 'deliveredOrderStatusId',
+    value: settings.deliveredOrderStatusId,
+    errors: settings.getErrors('deliveredOrderStatusId'),
+    options: settings.getDeliveredOrderStatusIdOptions(),
+}) }}
+
+{# default sender address #}
+{{ forms.selectField({
+    label: 'Default sender address'|t('craft-mygls'),
+    instructions: 'Select the location which address will be used as default sender address when creating parcels for orders. This setting can be overridden for the specific orders.'|t('craft-mygls'),
+    name: 'defaultLocationId',
+    value: settings.defaultLocationId,
+    errors: settings.getErrors('defaultLocationId'),
+    options: settings.getLocationOptions(),
+}) }}
+
+{{ forms.lightSwitch({
+    label: "Show GLS shipping widget if GLS integration is not avaiable for an order"|t('craft-mygls'),
+    name: 'showWidgetWhenNotAllowed',
+    on: settings.showWidgetWhenNotAllowed,
+    errors: settings.getErrors('showWidgetWhenNotAllowed'),
+}) }}

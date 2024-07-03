@@ -1,0 +1,40 @@
+{
+  "name": "craftsnippets/craft-mygls",
+  "version": "1.0.0",
+  "type": "craft-plugin",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Piotr Pogorzelski",
+      "homepage": "http://craftsnippets.com/"
+    }
+  ],
+  "require": {
+    "php": ">=8.2",
+    "craftcms/cms": "^5.0.0",
+    "webapix/mygls-sdk": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "craftsnippets\\craftgls\\": "src/"
+    }
+  },
+  "extra": {
+    "handle": "craft-mygls",
+    "name": "MyGls integration",
+    "developer": "Piotr Pogorzelski",
+    "developerUrl": "http://craftsnippets.com/",
+    "documentationUrl": "",
+    "class": "craftsnippets\\craftgls\\GlsPlugin"
+  },
+  "config": {
+    "sort-packages": true,
+    "platform": {
+      "php": "8.2"
+    },
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true,
+      "craftcms/plugin-installer": true
+    }
+  }
+}
